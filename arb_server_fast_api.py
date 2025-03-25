@@ -381,7 +381,7 @@ class HVACSimServer:
         """End the current session"""
         self._validate_session(request)
         self._cleanup_session()
-        return JSONResponse(content ='{"message": "Session cleared"}', status_code=204)
+        return JSONResponse(content ='{"message": "Session cleared"}', status_code=200)
 
     def get_relay_state(self, request: SessionID)-> Dict[str, bool]:
         """Get current relay states"""
