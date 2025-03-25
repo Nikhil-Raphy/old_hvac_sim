@@ -373,18 +373,18 @@ class HVACSimServer:
         })
         return response
 
-    def end_session(self, request: Request):
+    def end_session(self, request: SessionID):
         """End the current session"""
         self._validate_session(request)
         self._cleanup_session()
         return JSONResponse(status_code=204)
 
-    def get_relay_state(self, request: Request):
+    def get_relay_state(self, request: SessionID):
         """Get current relay states"""
         self._validate_session(request)
         return self.rb.sense_module.get_relay_states()
 
-    def set_relay_state(self, request: Request):
+    def set_relay_state(self, request: RelayConfig):
         """Configure relay states"""
         data = self._validate_session(request)
 
@@ -425,27 +425,27 @@ class HVACSimServer:
         return self.rb.switch_module.read_config()
 
     # Aquastat Endpoints
-    def start_aquastat_mode(self, request: Request):
+    def start_aquastat_mode(self, request: SessionID):
         self._validate_session(request)
         return self.rb.switch_module.start_aquastat_mode()
 
-    def end_aquastat_mode(self, request: Request):
+    def end_aquastat_mode(self, request: SessionID):
         self._validate_session(request)
         return self.rb.switch_module.end_aquastat_mode()
 
-    def open_aquastat(self, request: Request):
+    def open_aquastat(self, request: SessionID):
         self._validate_session(request)
         return self.rb.switch_module.open_aquastat()
 
-    def close_aquastat(self, request: Request):
+    def close_aquastat(self, request: SessionID):
         self._validate_session(request)
         return self.rb.switch_module.close_aquastat()
 
-    def get_aquastat_mode(self, request: Request):
+    def get_aquastat_mode(self, request: SessionID):
         self._validate_session(request)
         return self.rb.switch_module.get_aquastat_mode()
 
-    def get_aquastat_state(self, request: Request):
+    def get_aquastat_state(self, request: SessionID):
         self._validate_session(request)
         return self.rb.switch_module.get_aquastat_state()
 
