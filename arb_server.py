@@ -293,17 +293,13 @@ class HVACSimServer:
             if (time.time() - self.last_event_time) > DEFAULT_SESSION_TTL:
                 self.last_event_time = time.time()
                 self.session_cleanup()
-                status = True
+                return True
             elapsed_time = time.time() - self.last_event_time
             log.info("Time between events: " + str(elapsed_time))
-            status =  False
+            return False
 
         self.last_event_time = time.time()
-        status =  True
-
-        if self.session_id and status:  # If session has timed out
-            self.session_cleanup()
-        return status
+        return True
 
     def session_cleanup(self):
         """Helper function used to clean stale sessions, and initialize the base/default powered state. Additionally
