@@ -268,12 +268,11 @@ class HVACSimServer:
     def _validate_session(self, request: Request) -> Dict:
         """Validate session and return request data"""
         try:
-            data = request.json()
+            data = request.model_dump()
         except:
             raise HTTPException(status_code=400, detail="Invalid request body")
-
         if self._check_session_timeout():
-            raise HTTPException(status_code=400, detail="Session Timed out")
+            raise HTTPException(status_code=400, detail="Session Expired")
 
         if not data.get("session_id"):
             raise HTTPException(status_code=400, detail="Session ID missing")
@@ -293,15 +292,17 @@ class HVACSimServer:
     # --------------------------
     def _check_session_timeout(self) -> bool:
         """Check if session has timed out"""
-        if not self.session_id:
-            return True
-
-        if (time.time() - self.last_event_time) > DEFAULT_SESSION_TTL:
-            self._cleanup_session()
-            return True
+        if self.session_id:
+            if (time.time() - self.last_event_time) > DEFAULT_SESSION_TTL:
+                self.last_event_time = time.time()
+                self._cleanup_session()
+                return True
+            elapsed_time = time.time() - self.last_event_time
+            log.info("Time between events: " + str(elapsed_time))
+            return False
 
         self.last_event_time = time.time()
-        return False
+        return True
 
     def _cleanup_session(self):
         """Clean up current session"""
