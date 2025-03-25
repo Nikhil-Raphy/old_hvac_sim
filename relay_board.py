@@ -3,6 +3,8 @@ import sys
 import time
 
 import RPi.GPIO
+
+from sense_module_events import SenseModuleEvents
 from service_logging import log
 
 from sense_module import SenseModule
@@ -55,7 +57,7 @@ class RelayBoard:
         self.sense_module = SenseModule()
         self.switch_module = SwitchModule(model, has_pek, has_rh, has_rc, in_phase, acc_minus)
         self.configurations = SwitchModuleConfigurations(model, has_pek, has_rh, has_rc, in_phase, acc_minus)
-        self.events = self.sense_module.events
+        self.events = SenseModuleEvents()
         RPi.GPIO.setup(RPI_EXECUTE_PIN, RPi.GPIO.OUT)
         RPi.GPIO.output(RPI_EXECUTE_PIN, RPi.GPIO.HIGH)
 
@@ -77,6 +79,9 @@ class RelayBoard:
 
     def cleanup(self) -> None:
         """Cleanup all resources"""
+        log.debug("Initiating RelayBoard cleanup")
+
+        """Cleanup method"""
         try:
             self.switch_module.cleanup()
         finally:
@@ -84,11 +89,18 @@ class RelayBoard:
             RPi.GPIO.setup(RPI_EXECUTE_PIN, RPi.GPIO.OUT)
             RPi.GPIO.output(RPI_EXECUTE_PIN, RPi.GPIO.LOW)
             RPi.GPIO.cleanup()
-            del self.switch_module
-            del self.sense_module
+            self.switch_module.terminate_bus()
+            self.sense_module.cleanup()
+
+    def wait_for_event(self, event, timeout):
+        """Block until a specific event occurs. If timeout is not
+        specified or if it is 0, the function acts as a simple check.
+        Returns True if the event occurred and False otherwise.
+        """
+        return self.sense_module.wait_for_event(event, timeout)
+
 
     def configure(self, config):
         """Clean up switch module pins and reconfigure with new
         pin configuration"""
         self.switch_module.configure(config)
-

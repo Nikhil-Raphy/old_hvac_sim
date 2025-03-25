@@ -81,7 +81,24 @@ class SwitchModule:
         # set all GPIOs to zero (disconnect all terminals)
         self.cleanup()
 
-    def __del__(self):
+    def __enter__(self):
+        """Context manager entry point"""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit - automatic cleanup
+
+        :param exc_type: Exception type if any
+        :param exc_val: Exception value if any
+        :param exc_tb: Exception traceback if any
+
+        :Returns: False to propagate exceptions, True to suppress
+        """
+        self.terminate_bus()
+        return False  # Never suppress exceptions in HVAC control
+
+    def terminate_bus(self):
+        """Cleanup method"""
         self.bus.close()
 
     def _write_pin_data_to_registers(self):

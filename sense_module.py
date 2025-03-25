@@ -80,8 +80,6 @@ class SenseModule:
     _current_event = 0b0000000000000000
     _expected_event = 0b0000000000000000
 
-    events = SenseModuleEvents()
-
     def __init__(self):
         log.info("Initializing sense module")
         self.bus = smbus.SMBus(1)
@@ -93,7 +91,24 @@ class SenseModule:
         self.bus.write_byte_data(self.IC, self.IPOLA, 0b00000000)
         self.bus.write_byte_data(self.IC, self.IPOLB, 0b00000000)
 
-    def __del__(self):
+    def __enter__(self):
+        """Context manager entry point"""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit - automatic cleanup
+
+        :param exc_type: Exception type if any
+        :param exc_val: Exception value if any
+        :param exc_tb: Exception traceback if any
+
+        :Returns: False to propagate exceptions, True to suppress
+        """
+        self.cleanup()
+        return False  # Never suppress exceptions in HVAC control
+
+    def cleanup(self):
+        """Cleanup method"""
         self.bus.close()
 
     def _update_current_event(self):
