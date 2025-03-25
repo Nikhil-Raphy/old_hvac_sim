@@ -380,10 +380,10 @@ class HVACSimServer:
         self._cleanup_session()
         return JSONResponse(status_code=204)
 
-    def get_relay_state(self, request: SessionID):
+    def get_relay_state(self, request: SessionID)-> Dict[str, bool]:
         """Get current relay states"""
         self._validate_session(request)
-        return self.rb.sense_module.get_relay_states()
+        return json.loads(self.rb.sense_module.get_relay_states())
 
     def set_relay_state(self, request: RelayConfig):
         """Configure relay states"""

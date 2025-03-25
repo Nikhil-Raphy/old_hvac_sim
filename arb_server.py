@@ -410,7 +410,7 @@ class HVACSimServer:
     def end_session(self):
         """Ends the current session, verified by the session_id contained in the request body. Upon ending the session,
         the device falls back to its default powered state."""
-        self.session_cleanup()
+        self.session_id = None
         return make_response("", 204)
 
     @request_exists_check
