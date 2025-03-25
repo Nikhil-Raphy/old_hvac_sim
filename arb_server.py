@@ -228,6 +228,8 @@ class HVACSimServer:
 
     def init_server(self):
         """Initializes and runs the Flask server"""
+        self.valid_config_commands = {}
+
         self._success_response = {"state": "success", "session_id": "", "start_time": None, "value": None}
         # Mapping function calls to flask's error handler.
         self.app.errorhandler(400)(self.bad_request)
