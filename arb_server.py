@@ -5,7 +5,7 @@ from binascii import b2a_hex
 from os import urandom
 from service_logging import log
 
-from flask import Response, abort, jsonify, make_response, request
+from flask import Response, abort, jsonify, make_response, request, Flask
 
 from constants import DEFAULT_SESSION_TTL
 from relay_board import RelayBoard
