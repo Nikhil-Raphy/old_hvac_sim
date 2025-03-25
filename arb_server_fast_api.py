@@ -5,9 +5,11 @@ import time
 from binascii import b2a_hex
 from os import urandom
 from typing import Dict, Optional
+
+
 from service_logging import log
 
-from fastapi import FastAPI, Request, HTTPException, Depends
+from fastapi import FastAPI, Request, HTTPException, Depends, Response
 from pydantic import BaseModel
 from fastapi.responses import JSONResponse
 
@@ -379,7 +381,7 @@ class HVACSimServer:
         """End the current session"""
         self._validate_session(request)
         self._cleanup_session()
-        return JSONResponse(status_code=204)
+        return JSONResponse(content ='{"message": "Session cleared"}', status_code=204)
 
     def get_relay_state(self, request: SessionID)-> Dict[str, bool]:
         """Get current relay states"""
