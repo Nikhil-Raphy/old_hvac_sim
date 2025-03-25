@@ -1,7 +1,3 @@
-import os
-import sys
-import time
-
 import RPi.GPIO
 
 from sense_module_events import SenseModuleEvents

@@ -3,7 +3,6 @@ import time
 
 from service_logging import log
 
-from sense_module_events import SenseModuleEvents
 import smbus2 as smbus
 
 

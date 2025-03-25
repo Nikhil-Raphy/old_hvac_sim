@@ -2,14 +2,11 @@
 
 Make sure i2c is enabled in raspi-config
 """
-
-import os
-import sys
 import time
 from typing import List
 
 from service_logging import log
-from flask import Response, make_response
+from fastapi import Response
 
 from switch_module_configurations import SwitchModuleConfigurations
 from constants import AquastatBoardMode, AquastatState
@@ -189,7 +186,7 @@ class SwitchModule:
             200 - Success
         """
         current_config = " ".join(self._read_pins())
-        return make_response(current_config, 200)
+        return Response(content=current_config, status_code = 200)
 
     def read_config_str(self) -> str:
         """Reads the current HVACSim configuration
@@ -275,10 +272,10 @@ class SwitchModule:
         """
         # AttisPro does not need S22 to be High, if it is High for AttisPro, it can cause issues
         if self.has_pek or self.has_rh or self.model in ["athena", "artemis", "attisRetail, attisPro"]:
-            return make_response(f"Aquastat cannot be started if PEK/Rh is enabled or Device is {self.model}", 417)
+            return Response(content=f"Aquastat cannot be started if PEK/Rh is enabled or Device is {self.model}", status_code=417)
 
         if self.current_mode() == AquastatBoardMode.ON:
-            return make_response("Aquastat mode already started")
+            return Response(content="Aquastat mode already started", status_code=200)
 
         # Activating S22_AQUA
         self.IC2_GPIOA_DATA |= self.SwitchModuleConfigurations.DATA["S22_AQUA"] + self.bus.read_byte_data(
@@ -287,9 +284,9 @@ class SwitchModule:
         self.bus.write_byte_data(self.IC2, self.GPIOA, self.IC2_GPIOA_DATA)
 
         if self.current_mode() == AquastatBoardMode.OFF:
-            return make_response("Hardware couldn't activate aquastat mode", 417)
+            return Response(content="Hardware couldn't activate aquastat mode", status_code=417)
 
-        return make_response("Aquastat mode started", 200)
+        return Response(content="Aquastat mode started", status_code=200)
 
     def end_aquastat_mode(self) -> Response:
         """Ends aquastat mode
@@ -300,7 +297,8 @@ class SwitchModule:
         """
         # AttisPro does not need S22 to be High, hence does not require to lower it
         if self.current_mode() == AquastatBoardMode.OFF:
-            return make_response("Aquastat mode already disabled", 200)
+            return Response(content="Aquastat mode already disabled", status_code=200)
+
 
         # Deactivating S22_AQUA and S23_TOGGLE
         self.IC2_GPIOA_DATA &= ~(
@@ -312,9 +310,9 @@ class SwitchModule:
         self.bus.write_byte_data(self.IC2, self.GPIOA, self.IC2_GPIOA_DATA)
 
         if self.current_mode() == AquastatBoardMode.ON or self.current_state() == AquastatState.CLOSED:
-            return make_response("Hardware couldn't deactivate aquastat mode", 417)
+            return Response(content="Hardware couldn't deactivate aquastat mode", status_code=417)
 
-        return make_response("Aquastat mode ended", 200)
+        return Response(content="Aquastat mode ended", status_code=200)
 
     def open_aquastat(self) -> Response:
         """Opens aquastat
@@ -326,19 +324,19 @@ class SwitchModule:
         """
         # AttisPro does not need S22 to be High, if it is High for AttisPro, it can cause issues
         if self.model != "attisPro" and self.current_mode() == AquastatBoardMode.OFF:
-            return make_response("Aquastat mode is disabled, unable to open aquastat", 428)
+            return Response(content="Aquastat mode is disabled, unable to open aquastat", status_code=428)
 
         if self.current_state() == AquastatState.OPEN:
-            return make_response("Aquastat already opened", 200)
+            return Response(content="Aquastat already opened", status_code=200)
 
         # Activating S23_TOGGLE
         self.IC2_GPIOA_DATA &= ~self.SwitchModuleConfigurations.DATA["S23_TOGGLE"]
         self.bus.write_byte_data(self.IC2, self.GPIOA, self.IC2_GPIOA_DATA)
 
         if self.current_state() == AquastatState.CLOSED:
-            return make_response("Hardware couldn't open aquastat", 417)
+            return Response(content="Hardware couldn't open aquastat", status_code=417)
 
-        return make_response("Aquastat is now open", 200)
+        return Response(content="Aquastat is now open", status_code=200)
 
     def close_aquastat(self) -> Response:
         """Closes aquastat
@@ -350,9 +348,9 @@ class SwitchModule:
         """
         # AttisPro does not need S22 to be High, if it is High for AttisPro, it can cause issues
         if self.model != "attisPro" and self.current_mode() == AquastatBoardMode.OFF:
-            return make_response("Aquastat mode is disabled, unable to close aquastat", 428)
+            return Response(content="Aquastat mode is disabled, unable to close aquastat", status_code=428)
         if self.current_state() == AquastatState.CLOSED:
-            return make_response("Aquastat already closed", 200)
+            return Response(content="Aquastat already closed", status_code=200)
 
         # Deactivating S23_TOGGLE
         self.IC2_GPIOA_DATA |= self.SwitchModuleConfigurations.DATA["S23_TOGGLE"]
@@ -362,9 +360,9 @@ class SwitchModule:
         self.bus.write_byte_data(self.IC2, self.GPIOA, self.IC2_GPIOA_DATA)
 
         if self.current_state() == AquastatState.OPEN:
-            return make_response("Hardware couldn't close Aquastat", 417)
+            return Response(content="Hardware couldn't close Aquastat", status_code=417)
 
-        return make_response("Aquastat is now closed", 200)
+        return Response(content="Aquastat is now closed", status_code=200)
 
     def current_mode(self) -> str:
         """Returns a string with the current mode (on / off)
@@ -400,8 +398,8 @@ class SwitchModule:
         """
 
         if self.current_mode() == AquastatBoardMode.ON:
-            return make_response(AquastatBoardMode.ON, 200)
-        return make_response(AquastatBoardMode.OFF, 200)
+            return Response(content=AquastatBoardMode, status_code=200)
+        return Response(content=AquastatBoardMode.OFF, status_code=200)
 
     def get_aquastat_state(self) -> Response:
         """Gets aquastat relay state (Open / Closed)
@@ -411,5 +409,5 @@ class SwitchModule:
         """
 
         if self.current_state() == AquastatState.CLOSED:
-            return make_response(AquastatState.CLOSED, 200)
-        return make_response(AquastatState.OPEN, 200)
+            return Response(content=AquastatState.CLOSED, status_code=200)
+        return Response(content=AquastatState.OPEN, status_code=200)

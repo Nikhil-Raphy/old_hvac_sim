@@ -4,15 +4,13 @@ import signal
 import time
 from binascii import b2a_hex
 from os import urandom
-from typing import Dict, Optional
+from typing import Dict
 
 
 from service_logging import log
 
-from fastapi import FastAPI, Request, HTTPException, Depends, Response
+from fastapi import FastAPI, Request, HTTPException, Response
 from pydantic import BaseModel
-from fastapi.responses import JSONResponse
-
 from constants import DEFAULT_SESSION_TTL
 from relay_board import RelayBoard
 
@@ -270,17 +268,21 @@ class HVACSimServer:
     # --------------------------
     def _validate_session(self, request: Request) -> Dict:
         """Validate session and return request data"""
-        try:
-            data = request.model_dump()
-        except:
-            raise HTTPException(status_code=400, detail="Invalid request body")
+        if request:
+            try:
+                data = request.model_dump()
+            except:
+                raise HTTPException(status_code=400, detail="Invalid request body")
+
+            if not data.get("session_id"):
+                raise HTTPException(status_code=400, detail="Session ID missing")
+            if data["session_id"] != self.session_id:
+                raise HTTPException(status_code=401, detail="Invalid session ID")
+        else:
+            data = {}
+
         if self._check_session_timeout():
             raise HTTPException(status_code=400, detail="Session Expired")
-
-        if not data.get("session_id"):
-            raise HTTPException(status_code=400, detail="Session ID missing")
-        if data["session_id"] != self.session_id:
-            raise HTTPException(status_code=401, detail="Invalid session ID")
 
         self.last_event_time = time.time()
         return data
@@ -381,7 +383,7 @@ class HVACSimServer:
         """End the current session"""
         self._validate_session(request)
         self._cleanup_session()
-        return JSONResponse(content ={"message": "Session cleared"}, status_code=200)
+        return Response(content ="Session cleared", status_code=200)
 
     def get_relay_state(self, request: SessionID)-> Dict[str, bool]:
         """Get current relay states"""
@@ -445,12 +447,12 @@ class HVACSimServer:
         self._validate_session(request)
         return self.rb.switch_module.close_aquastat()
 
-    def get_aquastat_mode(self, request: SessionID):
-        self._validate_session(request)
+    def get_aquastat_mode(self):
+        self._validate_session()
         return self.rb.switch_module.get_aquastat_mode()
 
-    def get_aquastat_state(self, request: SessionID):
-        self._validate_session(request)
+    def get_aquastat_state(self):
+        self._validate_session()
         return self.rb.switch_module.get_aquastat_state()
 
 
