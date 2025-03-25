@@ -4,8 +4,7 @@ import signal
 import time
 from binascii import b2a_hex
 from os import urandom
-from typing import Dict
-
+from typing import Dict, Union
 
 from service_logging import log
 
@@ -266,9 +265,12 @@ class HVACSimServer:
     # --------------------------
     # Dependency Injections
     # --------------------------
-    def _validate_session(self, request: Request) -> Dict:
+    def _validate_session(self, request: Union[Request, BaseModel, None]=None) -> Dict:
         """Validate session and return request data"""
-        if request:
+        if self._check_session_timeout():
+            raise HTTPException(status_code=400, detail="Session Expired")
+        data = {}
+        if request is not None:
             try:
                 data = request.model_dump()
             except:
@@ -278,11 +280,6 @@ class HVACSimServer:
                 raise HTTPException(status_code=400, detail="Session ID missing")
             if data["session_id"] != self.session_id:
                 raise HTTPException(status_code=401, detail="Invalid session ID")
-        else:
-            data = {}
-
-        if self._check_session_timeout():
-            raise HTTPException(status_code=400, detail="Session Expired")
 
         self.last_event_time = time.time()
         return data
