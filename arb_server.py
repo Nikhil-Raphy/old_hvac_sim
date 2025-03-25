@@ -241,6 +241,7 @@ class HVACSimServer:
         self.app.add_url_rule("/api/session/", "start_session", self.start_session, methods=["POST"])  # used
         self.app.add_url_rule("/api/status/", "get_status", self.get_status, methods=["GET"])  # used partially
         self.app.add_url_rule("/api/session/", "end_session", self.end_session, methods=["DELETE"])  # used
+
         self.app.add_url_rule('/api/relays/', 'get_relay_states', self.get_relay_state, methods=['POST']) # used
         self.app.add_url_rule('/api/relays/configure/', 'set_relay_states', self.set_relay_state, methods=['POST']) # used
         self.app.add_url_rule('/api/clear/', 'clear_all_sessions', self.clear_all_sessions, methods=['DELETE'])
@@ -324,8 +325,11 @@ class HVACSimServer:
 
         def request_exists_check_wrapper(self):
             user_request = request.get_json()
+            log.info(f"*********** request_exists_check*********{user_request}")
+
             if not user_request:
                 abort(400)
+            log.info("*********** request_exists_check passed*********")
             return func(self)
 
         return request_exists_check_wrapper
@@ -337,7 +341,10 @@ class HVACSimServer:
 
         def verify_valid_session_id_wrapper(self):
             session_id = request.json["session_id"]
+
+            log.info(f"***********verify_valid_session_id***********")
             if session_id is None:
+                log.info(f"***********None session_id***********")
                 abort(400)
             elif session_id != self.session_id:
                 abort(401)
@@ -364,8 +371,10 @@ class HVACSimServer:
 
         def verify_active_session_wrapper(func):
             def verify_session_wrapped(self):
+                log.info(f"*********** verify_active_session***********")
                 if self.check_session_timeout():
                     abort(response)
+                log.info(f"*********** verify_active_session passed***********")
                 return func(self)
 
             return verify_session_wrapped
@@ -404,7 +413,8 @@ class HVACSimServer:
         self.session_id = b2a_hex(urandom(15)).decode("utf-8")
         resp = self._success_response
         resp["session_id"] = self.session_id
-        resp["start_time"] = time.ctime(time.time())  # Current time & date.
+        resp["start_time"] = time.ctime(time.time())
+        log.info(f"*********** Session created*********{resp['session_id']}")# Current time & date.
         return make_response(jsonify(resp), 200)
 
 
@@ -431,6 +441,7 @@ class HVACSimServer:
         """Activates relays according to the state specified in the request body, which are defined explicitly in
         relay_board and switch_module. Note that while the default state is configured for thermostat power, other
         mechanical relays will not be engaged as expected until the corresponding relay state is set."""
+        log.info(f"*********** Seting relay state*********{request.json['config']}")
         if not request.json["config"] in self.valid_config_commands:
             response = make_response("Invalid config.")
             response.status_code = 400
