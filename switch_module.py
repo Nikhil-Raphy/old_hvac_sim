@@ -14,10 +14,7 @@ from flask import Response, make_response
 from switch_module_configurations import SwitchModuleConfigurations
 from constants import AquastatBoardMode, AquastatState
 
-try:
-    import smbus2 as smbus
-except ImportError as e:
-    log.info("Failed to import smbus.")
+import smbus2 as smbus
 
 
 class SwitchModule:
